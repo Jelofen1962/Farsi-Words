@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فلش کارت لغات</title>
+  <style>
+    @font-face {
+      font-family: sf;
+      src: url(/sf.TTF);
+    }
+    body {
+      font-family: 'sf', sans-serif;
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .CardOf{
+      margin-top: 3rem;
+    }
+    .card {
+      font-family: 'sf', sans-serif;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      padding: 2rem;
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+      width: 50vw;
+      height: 300px;
+      transition: background-color 0.4s ease;
+    }
+    .card.correct {
+      animation: flashCorrect 1s ease forwards;
+    }
+    .card.wrong {
+      animation: flashWrong 1s ease forwards;
+    }
+    input {
+      direction: rtl;
+      justify-content: center;
+      font-family: 'sf', sans-serif;
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      width: 100%;
+      margin-top: 1rem;
+      margin-right: auto;
+      margin-left: -0.5rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      font-family: 'sf', sans-serif;
+      margin-top: 1rem;
+      padding: 0.7rem 2rem;
+      font-size: 1rem;
+      background: #ff7e5f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #eb5757;
+    }
+    #progressBar {
+      width: 100%;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+    #progressFill {
+      height: 20px;
+      background: #4caf50;
+      width: 0;
+      transition: width 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes flashCorrect {
+      0% { background-color: #a5d6a7; }
+      100% { background-color: white; }
+    }
+    @keyframes flashWrong {
+      0% { background-color: #ef9a9a; }
+      100% { background-color: white; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h2 id="word">در حال بارگذاری...</h2>
+    <input type="text" id="answer" placeholder="معنی را وارد کنید...">
+    <div class="CardOf"><button onclick="checkAnswer()">بررسی</button>
+    <button onclick="resetProgress()">ریست</button>
+    <div id="progressBar"><div id="progressFill"></div></div>
+    <p id="feedback"></p></div>
+  </div>
+
+  <script>
+    let words = [];
+    let progress = JSON.parse(localStorage.getItem("progress")) || [];
+    let current = null;
+
+    fetch("loghat.txt")
+      .then(res => res.text())
+      .then(data => {
+        words = data.trim().split('\n').map(line => {
+          const parts = line.split(":");
+          if (parts.length < 2) return null;
+          return {
+            word: parts[0].trim(),
+            meanings: parts[1].split(/[،؛]/).map(m => m.trim()).filter(Boolean)
+          };
+        }).filter(Boolean);
+        updateProgressBar();
+        showNextWord();
+      });
+
+    function getRandomWord() {
+      const remaining = words.filter(w => !progress.includes(w.word));
+      if (remaining.length === 0) {
+        document.getElementById("word").innerText = "تبریک! همه لغات را یاد گرفتی 🎉";
+        document.getElementById("answer").style.display = "none";
+        return null;
+      }
+      return remaining[Math.floor(Math.random() * remaining.length)];
+    }
+
+    function showNextWord() {
+      current = getRandomWord();
+      const card = document.getElementById("card");
+      card.classList.remove("correct", "wrong");
+      if (current) {
+        document.getElementById("word").innerText = current.word;
+        document.getElementById("answer").value = "";
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("answer").style.display = "inline-block";
+      }
+      updateProgressBar();
+    }
+
+    function checkAnswer() {
+      const userInput = document.getElementById("answer").value.trim();
+      const correctList = current.meanings;
+      const isCorrect = correctList.some(correct => stringSimilarity(userInput, correct) >= 0.7);
+      const card = document.getElementById("card");
+
+      if (isCorrect) {
+        card.classList.remove("wrong");
+        card.classList.add("correct");
+        document.getElementById("feedback").innerText = "✅ درست بود!";
+        progress.push(current.word);
+        localStorage.setItem("progress", JSON.stringify(progress));
+        setTimeout(showNextWord, 1000);
+      } else {
+        card.classList.remove("correct");
+        card.classList.add("wrong");
+        const maxAccuracy = Math.max(...correctList.map(correct => stringSimilarity(userInput, correct)));
+        document.getElementById("feedback").innerText = `❌ دقیق‌تر بنویس. دقت: ${(maxAccuracy * 100).toFixed(0)}٪`;
+      }
+    }
+
+    function stringSimilarity(a, b) {
+      let matches = 0;
+      let len = Math.max(a.length, b.length);
+      for (let i = 0; i < len; i++) {
+        if (a[i] === b[i]) matches++;
+      }
+      return matches / len;
+    }
+
+    function resetProgress() {
+      localStorage.removeItem("progress");
+      progress = [];
+      showNextWord();
+    }
+
+    function updateProgressBar() {
+      const total = words.length;
+      const completed = progress.length;
+      const percent = (completed / total) * 100;
+      document.getElementById("progressFill").style.width = percent + "%";
+    }
+  </script>
+</body>
+</html>
