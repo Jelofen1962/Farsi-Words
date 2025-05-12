@@ -7,7 +7,7 @@
   <style>
     @font-face {
       font-family: sf;
-      src: url(/sf.TTF);
+      src: url(/sf.TTF); /* Replace with your font file path */
     }
     body {
       font-family: 'sf', sans-serif;
@@ -16,48 +16,57 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh; /* Use min-height for responsiveness */
       margin: 0;
       overflow: hidden;
+      padding: 20px; /* Add padding for smaller screens */
     }
+
     .CardOf{
-      margin-top: 3rem;
+      margin-top: 2rem; /* Adjust margin for smaller screens */
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Center items horizontally */
     }
+
     .card {
       font-family: 'sf', sans-serif;
       background: white;
       border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      padding: 2rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* Reduced shadow for smaller screens */
+      padding: 1.5rem; /* Adjust padding for smaller screens */
       text-align: center;
       animation: fadeIn 0.6s ease-in-out;
-      width: 50vw;
-      height: 300px;
+      width: 100%; /* Make card responsive */
+      max-width: 600px; /* Limit max-width for larger screens */
+      height: auto; /* Allow height to adjust to content */
       transition: background-color 0.4s ease;
     }
+
     .card.correct {
       animation: flashCorrect 1s ease forwards;
     }
     .card.wrong {
       animation: flashWrong 1s ease forwards;
     }
+
     input {
       direction: rtl;
       justify-content: center;
       font-family: 'sf', sans-serif;
-      font-size: 1.2rem;
-      padding: 0.5rem;
+      font-size: 1.1rem; /* Slightly smaller font size for smaller screens */
+      padding: 0.7rem;
       width: 100%;
       margin-top: 1rem;
-      margin-right: auto;
-      margin-left: -0.5rem;
       border-radius: 10px;
       border: 1px solid #ccc;
+      box-sizing: border-box; /* Important for width calculation with padding */
     }
+
     button {
       font-family: 'sf', sans-serif;
       margin-top: 1rem;
-      padding: 0.7rem 2rem;
+      padding: 0.8rem 2.2rem; /* Adjust padding for smaller screens */
       font-size: 1rem;
       background: #ff7e5f;
       color: white;
@@ -66,9 +75,11 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+
     button:hover {
       background: #eb5757;
     }
+
     #progressBar {
       width: 100%;
       background: #ddd;
@@ -76,23 +87,41 @@
       overflow: hidden;
       margin-top: 1rem;
     }
+
     #progressFill {
       height: 20px;
       background: #4caf50;
       width: 0;
       transition: width 0.3s;
     }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
     @keyframes flashCorrect {
       0% { background-color: #a5d6a7; }
       100% { background-color: white; }
     }
+
     @keyframes flashWrong {
       0% { background-color: #ef9a9a; }
       100% { background-color: white; }
+    }
+
+    /* Media Query for Smaller Screens (Phones) */
+    @media (max-width: 600px) {
+      .card {
+        padding: 1rem;
+      }
+      input {
+        font-size: 1rem;
+      }
+      button {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
@@ -100,10 +129,12 @@
   <div class="card" id="card">
     <h2 id="word">در حال بارگذاری...</h2>
     <input type="text" id="answer" placeholder="معنی را وارد کنید...">
-    <div class="CardOf"><button onclick="checkAnswer()">بررسی</button>
-    <button onclick="resetProgress()">ریست</button>
-    <div id="progressBar"><div id="progressFill"></div></div>
-    <p id="feedback"></p></div>
+    <div class="CardOf">
+      <button onclick="checkAnswer()">بررسی</button>
+      <button onclick="confirmReset()">از سر گیری</button>
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <p id="feedback"></p>
+    </div>
   </div>
 
   <script>
@@ -177,6 +208,12 @@
         if (a[i] === b[i]) matches++;
       }
       return matches / len;
+    }
+
+    function confirmReset() {
+      if (confirm("آیا مطمئنید می‌خواهید پیشرفت خود را از سر بگیرید؟")) {
+        resetProgress();
+      }
     }
 
     function resetProgress() {
